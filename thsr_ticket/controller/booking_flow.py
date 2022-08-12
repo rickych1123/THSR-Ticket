@@ -1,4 +1,5 @@
 import io
+from time import sleep
 from PIL import Image
 
 from requests.models import Response
@@ -41,7 +42,7 @@ class BookingFlow:
         self.db = ParamDB()
         self.record = Record()
 
-    def run(self) -> Response:
+    def run(self) -> bool:
         self.show_history()
 
         # First page. Booking options
@@ -50,43 +51,52 @@ class BookingFlow:
         self.book_form.outbound_date = self.book_info.date_info("出發")
         self.set_outbound_time()
         self.set_adult_ticket_num()
+        self.set_personal_id()
+        self.set_phone()
+        self.db.save(self.book_form, self.confirm_ticket)
         print("等待驗證碼...")
         book_page = self.client.request_booking_page().content
-        self.book_form.seat_prefer = parse_seat_prefer_value(book_page)
+        self.book_form.seat_prefer = "2"  # 1:靠走道 2:靠窗
         self.book_form.security_code = self.input_security_code(book_page)
 
         form_params = self.book_form.get_params()
-        result = self.client.submit_booking_form(form_params)
-        if self.show_error(result.content):
-            return result
+        retry_times = 1
+        while True:
+            result = self.client.submit_booking_form(form_params)
+            if not self.show_error(result.content, retry_times):
+                break
+            retry_times += 1
+            sleep(2)
 
         # Second page. Train confirmation
         avail_trains = AvailTrains().parse(result.content)
         sel = self.show_avail_trains.show(avail_trains)
-        value = avail_trains[sel-1].form_value  # Selection from UI count from 1
+        # Selection from UI count from 1
+        value = avail_trains[sel-1].form_value
         self.confirm_train.selection = value
         confirm_params = self.confirm_train.get_params()
         result = self.client.submit_train(confirm_params).content
-        if self.show_error(result):
-            return result
+        if self.show_error(result, 0):
+            return False
 
         # Third page. Ticket confirmation
-        self.set_personal_id()
-        self.set_phone()
-        self.confirm_ticket.id_radio_value = parse_person_id_radio_value(result)
-        self.confirm_ticket.phone_radio_value = parse_mobile_radio_value(result)
+        # self.set_personal_id()
+        # self.set_phone()
+        #self.confirm_ticket.id_radio_value = parse_person_id_radio_value(result)
+        #self.confirm_ticket.phone_radio_value = parse_mobile_radio_value(result)
+        # self.set_train_option(confirm_params["TrainQueryDataViewPanel:TrainGroup"])
         ticket_params = self.confirm_ticket.get_params()
         result = self.client.submit_ticket(ticket_params)
-        if self.show_error(result.content):
-            return result
+        if self.show_error(result.content, 0):
+            return False
 
-        result_model = BookingResult().parse(result.content)
-        book = ShowBookingResult()
-        book.show(result_model)
+        #result_model = BookingResult().parse(result.content)
+        #book = ShowBookingResult()
+        # book.show(result_model)
         print("\n請使用官方提供的管道完成後續付款以及取票!!")
 
         self.db.save(self.book_form, self.confirm_ticket)
-        return result
+        return True
 
     def show_history(self) -> None:
         hist = self.db.get_history()
@@ -104,7 +114,8 @@ class BookingFlow:
         if self.record.dest_station is not None:
             self.book_form.dest_station = self.record.dest_station
         else:
-            self.book_form.dest_station = self.book_form.dest_station = self.book_info.station_info("到達")
+            self.book_form.dest_station = self.book_form.dest_station = self.book_info.station_info(
+                "到達")
 
     def set_outbound_time(self) -> None:
         if self.record.outbound_time is not None:
@@ -131,6 +142,9 @@ class BookingFlow:
         else:
             self.confirm_ticket.phone = self.confirm_ticket_info.phone_info()
 
+    def set_train_option(self, train_option) -> None:
+        self.confirm_ticket.train_option = train_option
+
     def input_security_code(self, book_page: bytes) -> str:
         img_resp = self.client.request_security_code_img(book_page)
         image = Image.open(io.BytesIO(img_resp.content))
@@ -141,12 +155,12 @@ class BookingFlow:
         # plt.show()
         return input()
 
-    def show_error(self, html: bytes) -> bool:
+    def show_error(self, html: bytes, retry_times: int) -> bool:
         errors = self.error_feedback.parse(html)
         if len(errors) == 0:
             return False
 
-        self.show_error_msg.show(errors)
+        self.show_error_msg.show(errors, retry_times)
         return True
 
 

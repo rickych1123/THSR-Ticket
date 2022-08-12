@@ -48,11 +48,15 @@ class BookingForm(AbstractParams):
             self.inbound_date = self.outbound_date
         params = {
             "BookingS1Form:hf:0": "",
+            "tripCon:typesoftrip": 0,
+            "trainCon:trainRadioGroup": 0,
+            "seatCon:seatRadioGroup": 0,
+            "bookingMethod": "radio27",
             "selectStartStation": self.start_station,
             "selectDestinationStation": self.dest_station,
             "trainCon:trainRadioGroup": self.class_type,
             "seatCon:seatRadioGroup": self.seat_prefer,
-            "bookingMethod": self.search_by,
+            #"bookingMethod": self.search_by,
             "toTimeInputField": self.outbound_date,
             "toTimeTable": self.outbound_time,
             "toTrainIDInputField": 0,
@@ -137,7 +141,8 @@ class BookingForm(AbstractParams):
         if self._outbound_date is not None:
             out_date = datetime.strptime(self._outbound_date, '%Y/%m/%d')
             if out_date > in_date:
-                raise ValueError("Inbound date shouldn't be earlier than outbound date!")
+                raise ValueError(
+                    "Inbound date shouldn't be earlier than outbound date!")
 
         self._inbound_date = value
 
@@ -200,4 +205,5 @@ class BookingForm(AbstractParams):
 
     def _validate_value(self, proper: str, value: Any) -> None:
         if value not in BOOKING_SCHEMA["properties"][proper]["enum"]:
-            raise ValueError("Value '{}' is not allowed for this attribute '{}'".format(value, proper))
+            raise ValueError(
+                "Value '{}' is not allowed for this attribute '{}'".format(value, proper))

@@ -10,6 +10,7 @@ class ConfirmTicket(AbstractParams):
         # User input
         self._personal_id: str = None
         self._phone: str = ""
+        self.train_option: str = ""
 
         # Parse from the page
         self.id_radio_value: str = None
@@ -19,19 +20,22 @@ class ConfirmTicket(AbstractParams):
         params = {
             "BookingS3FormSP:hf:0": "",
             "diffOver": 1,
-            "idInputRadio": self.id_radio_value,
-            "idInputRadio:idNumber": self.personal_id,
-            "eaiPhoneCon:phoneInputRadio": self.phone_radio_value,
-            "eaiPhoneCon:phoneInputRadio:mobilePhone": self.phone,
-            "email": "",
-            "agree": "on",
+            "isSPromotion": 1,
+            "passengerCount": 1,
             "isGoBackM": "",
             "backHome": "",
-            "TgoError": "1"
+            "TgoError": 1,
+            "idInputRadio": 0,
+            "dummyId": self.personal_id,
+            "dummyPhone": self.phone,
+            "email": "",
+            #"TicketMemberSystemInputPanel:TakerMemberSystemDataView:memberSystemRadioGroup": self.train_option,
+            "TicketMemberSystemInputPanel:TakerMemberSystemDataView:memberSystemRadioGroup": "radio41",
+            "agree": "on",
         }
 
-        if val:
-            validate(params, schema=CONFIRM_TICKET_SHEMA)
+        #if val:
+        #    validate(params, schema=CONFIRM_TICKET_SHEMA)
         return params
 
     @property
@@ -41,7 +45,8 @@ class ConfirmTicket(AbstractParams):
     @personal_id.setter
     def personal_id(self, value: str) -> None:
         if len(value) != 10:
-            raise ValueError("Wrong length of R.O.C. ID. Should be 10, received {}".format(len(value)))
+            raise ValueError(
+                "Wrong length of R.O.C. ID. Should be 10, received {}".format(len(value)))
         self._personal_id = value
 
     @property
@@ -51,7 +56,9 @@ class ConfirmTicket(AbstractParams):
     @phone.setter
     def phone(self, value: str) -> None:
         if len(value) != 0 and len(value) != 10:
-            raise ValueError("Wrong length of phone number. Should be 10, received {}".format(len(value)))
+            raise ValueError(
+                "Wrong length of phone number. Should be 10, received {}".format(len(value)))
         if len(value) != 0 and not value.startswith("09"):
-            raise ValueError("Wrong prefix with the phone number: {}".format(value))
+            raise ValueError(
+                "Wrong prefix with the phone number: {}".format(value))
         self._phone = value

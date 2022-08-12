@@ -32,3 +32,8 @@ class ParseAvailTrain:
             "name": "TrainQueryDataViewPanel:TrainGroup"
         }
     }
+
+class ParseAvailTrainNew:
+    from_html = {
+        "class": "btn-radio"
+    }

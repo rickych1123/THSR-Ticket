@@ -4,6 +4,10 @@ BOOKING_SCHEMA: Mapping[str, Any] = {
     "type": "object",
     "properties": {
         "BookingS1Form:hf:0": {"type": "string"},
+        "tripCon:typesoftrip": {"type": "integer"},
+        "trainCon:trainRadioGroup": {"type": "integer"},
+        "seatCon:seatRadioGroup": {"type": "integer"},
+        "bookingMethod": {"type": "string"},
         "selectStartStation": {
             "type": "integer",
             "enum": [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]
@@ -17,12 +21,13 @@ BOOKING_SCHEMA: Mapping[str, Any] = {
             "enum": [0, 1]  # Standard car / Business car
         },
         "seatCon:seatRadioGroup": {
-            "type": "string",  # Seat perference (None / Window seat / Aisle seat)
+            # Seat perference (None / Window seat / Aisle seat)
+            "type": "string",
         },
-        "bookingMethod": {
-            "type": "integer",  # Search seat by...
-            "enum": [0, 1]  # Depart,Arrival time / Train No.
-        },
+        # "bookingMethod": {
+        #     "type": "integer",  # Search seat by...
+        #     "enum": [0, 1]  # Depart,Arrival time / Train No.
+        # },
         "toTimeInputField": {"type": "string"},  # format: yyyy/mm/dd
         "toTimeTable": {
             "type": "string",
